@@ -1,14 +1,21 @@
 import os
-import requests
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from groq import Groq
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageFilter
 import io
 
-TELEGRAM_TOKEN = os.getenv("8743591475:AAGRm04hq-E9fIiJx205VQsU2VqEoNyxD9o")
-GROQ_API_KEY = os.getenv("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")
 MODELO = "llama-3.3-70b-versatile"
-cliente = Groq(api_key=GROQ_API_KEY)
+
+def get_tokens():
+    token = os.getenv("8743591475:AAGRm04hq-E9fIiJx205VQsU2VqEoNyxD9o")
+    groq_key = os.getenv("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")
+    
+    if not token:
+        raise ValueError("TELEGRAM_TOKEN não configurada!")
+    if not groq_key:
+        raise ValueError("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")
+    
+    return token, groq_key
 
 async def start(update, context):
     await update.message.reply_text(
@@ -26,6 +33,8 @@ async def responder_texto(update, context):
     msg = update.message.text
     await update.message.chat.send_action(action="typing")
     try:
+        _, groq_key = get_tokens()
+        cliente = Groq(api_key=groq_key)
         resposta = cliente.chat.completions.create(
             model=MODELO,
             messages=[{"role": "user", "content": msg}]
@@ -37,11 +46,11 @@ async def responder_texto(update, context):
 async def responder_imagem(update, context):
     await update.message.chat.send_action(action="typing")
     try:
-        # Baixar imagem
         file = await update.message.photo[-1].get_file()
         img_bytes = await file.download_as_bytearray()
         
-        # Análise com Groq (descrição)
+        _, groq_key = get_tokens()
+        cliente = Groq(api_key=groq_key)
         resposta = cliente.chat.completions.create(
             model=MODELO,
             messages=[{
@@ -60,6 +69,8 @@ async def responder_video(update, context):
         file = await update.message.video.get_file()
         await update.message.reply_text("📹 Vídeo recebido! Processando...")
         
+        _, groq_key = get_tokens()
+        cliente = Groq(api_key=groq_key)
         resposta = cliente.chat.completions.create(
             model=MODELO,
             messages=[{
@@ -145,7 +156,8 @@ async def rotate_imagem(update, context):
         await update.message.reply_text(f"Erro: {e}")
 
 def main():
-    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    token, _ = get_tokens()
+    app = Application.builder().token(token).build()
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("blur", blur_imagem))
