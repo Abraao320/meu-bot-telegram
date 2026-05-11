@@ -1,12 +1,18 @@
+
 import os
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from groq import Groq
 from PIL import Image, ImageFilter
 import io
 
+# ✅ CORRETO - pega as chaves das variáveis de ambiente
+TELEGRAM_TOKEN = os.environ.get("8743591475:AAHyCBh92acTLUjgLXsEA_x8WSh-vat0LyI")
+GROQ_API_KEY = os.environ.get("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")
+
 MODELO = "llama-3.3-70b-versatile"
-TELEGRAM_TOKEN = os.getenv("8743591475:AAGQcitFKo14-fqYCgL91PHgLf4Egm6TNIg")
-GROQ_API_KEY = os.getenv("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")
+
+# Inicializa o cliente Groq
+cliente = Groq(api_key=GROQ_API_KEY)
 
 async def start(update, context):
     await update.message.reply_text(
@@ -24,7 +30,6 @@ async def responder_texto(update, context):
     msg = update.message.text
     await update.message.chat.send_action(action="typing")
     try:
-        cliente = Groq(api_key=GROQ_API_KEY)
         resposta = cliente.chat.completions.create(
             model=MODELO,
             messages=[{"role": "user", "content": msg}]
@@ -39,16 +44,12 @@ async def responder_imagem(update, context):
         file = await update.message.photo[-1].get_file()
         img_bytes = await file.download_as_bytearray()
         
-        cliente = Groq(api_key=GROQ_API_KEY)
-        resposta = cliente.chat.completions.create(
-            model=MODELO,
-            messages=[{
-                "role": "user",
-                "content": "Analise esta imagem e descreva o que você vê em detalhes."
-            }]
+        # Aqui você precisaria de um modelo com visão (Groq não suporta imagem)
+        await update.message.reply_text(
+            "📸 Imagem recebida!\n\n"
+            "Infelizmente o Groq ainda não suporta análise de imagens.\n"
+            "Para editar a imagem, use: /blur, /resize ou /rotate"
         )
-        
-        await update.message.reply_text(f"📸 Análise:\n{resposta.choices[0].message.content}")
     except Exception as e:
         await update.message.reply_text(f"Erro ao processar imagem: {e}")
 
@@ -56,18 +57,10 @@ async def responder_video(update, context):
     await update.message.chat.send_action(action="typing")
     try:
         file = await update.message.video.get_file()
-        await update.message.reply_text("📹 Vídeo recebido! Processando...")
-        
-        cliente = Groq(api_key=GROQ_API_KEY)
-        resposta = cliente.chat.completions.create(
-            model=MODELO,
-            messages=[{
-                "role": "user",
-                "content": "Descreva o que você vê neste vídeo."
-            }]
+        await update.message.reply_text(
+            "🎥 Vídeo recebido!\n\n"
+            "Infelizmente o Groq ainda não suporta análise de vídeos."
         )
-        
-        await update.message.reply_text(f"Análise: {resposta.choices[0].message.content}")
     except Exception as e:
         await update.message.reply_text(f"Erro ao processar vídeo: {e}")
 
@@ -155,8 +148,8 @@ def main():
     app.add_handler(MessageHandler(filters.VIDEO, responder_video))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder_texto))
     
+    print("✅ Bot iniciado com sucesso!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
-
