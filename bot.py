@@ -5,17 +5,8 @@ from PIL import Image, ImageFilter
 import io
 
 MODELO = "llama-3.3-70b-versatile"
-
-def get_tokens():
-    token = os.getenv("8743591475:AAGRm04hq-E9fIiJx205VQsU2VqEoNyxD9o")
-    groq_key = os.getenv("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")
-    
-    if not token:
-        raise ValueError("TELEGRAM_TOKEN não configurada!")
-    if not groq_key:
-        raise ValueError("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")
-    
-    return token, groq_key
+TELEGRAM_TOKEN = os.getenv("8743591475:AAGRm04hq-E9fIiJx205VQsU2VqEoNyxD9o")
+GROQ_API_KEY = os.getenv("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")
 
 async def start(update, context):
     await update.message.reply_text(
@@ -33,8 +24,7 @@ async def responder_texto(update, context):
     msg = update.message.text
     await update.message.chat.send_action(action="typing")
     try:
-        _, groq_key = get_tokens()
-        cliente = Groq(api_key=groq_key)
+        cliente = Groq(api_key=GROQ_API_KEY)
         resposta = cliente.chat.completions.create(
             model=MODELO,
             messages=[{"role": "user", "content": msg}]
@@ -49,8 +39,7 @@ async def responder_imagem(update, context):
         file = await update.message.photo[-1].get_file()
         img_bytes = await file.download_as_bytearray()
         
-        _, groq_key = get_tokens()
-        cliente = Groq(api_key=groq_key)
+        cliente = Groq(api_key=GROQ_API_KEY)
         resposta = cliente.chat.completions.create(
             model=MODELO,
             messages=[{
@@ -69,8 +58,7 @@ async def responder_video(update, context):
         file = await update.message.video.get_file()
         await update.message.reply_text("📹 Vídeo recebido! Processando...")
         
-        _, groq_key = get_tokens()
-        cliente = Groq(api_key=groq_key)
+        cliente = Groq(api_key=GROQ_API_KEY)
         resposta = cliente.chat.completions.create(
             model=MODELO,
             messages=[{
@@ -156,8 +144,7 @@ async def rotate_imagem(update, context):
         await update.message.reply_text(f"Erro: {e}")
 
 def main():
-    token, _ = get_tokens()
-    app = Application.builder().token(token).build()
+    app = Application.builder().token(TELEGRAM_TOKEN).build()
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("blur", blur_imagem))
@@ -172,3 +159,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
