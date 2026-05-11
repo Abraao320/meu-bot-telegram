@@ -5,7 +5,7 @@ from groq import Groq
 TELEGRAM_TOKEN = "8743591475:AAGRm04hq-E9fIiJx205VQsU2VqEoNyxD9o"
 GROQ_API_KEY = "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"
 
-MODELO = "llama-3.1-8b-instant"
+MODELO = "llama-3.1-70b-versatile"
 cliente = Groq(api_key=GROQ_API_KEY)
 
 async def start(update, context):
