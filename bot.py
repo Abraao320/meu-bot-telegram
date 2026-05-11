@@ -5,7 +5,7 @@ from PIL import Image, ImageFilter
 import io
 
 MODELO = "llama-3.3-70b-versatile"
-TELEGRAM_TOKEN = os.getenv("8743591475:AAGRm04hq-E9fIiJx205VQsU2VqEoNyxD9o")
+TELEGRAM_TOKEN = os.getenv("8743591475:AAGQcitFKo14-fqYCgL91PHgLf4Egm6TNIg")
 GROQ_API_KEY = os.getenv("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")
 
 async def start(update, context):
