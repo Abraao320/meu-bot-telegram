@@ -2,153 +2,73 @@
 import os
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from groq import Groq
-from PIL import Image, ImageFilter
-import io
 
-# ✅ CORRETO - pega as chaves das variáveis de ambiente
-TELEGRAM_TOKEN = os.environ.get("8743591475:AAHyCBh92acTLUjgLXsEA_x8WSh-vat0LyI")
-GROQ_API_KEY = os.environ.get("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")
+# ==================================================
+# PEGA AS CHAVES DAS VARIÁVEIS DE AMBIENTE
+# ==================================================
+TELEGRAM_TOKEN = os.environ.get("8743591475:AAGkTTCamdOgbzneh6wULEJfAIkM9U60GSI")
+GROQ_API_KEY = os.environ.get("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")
 
-MODELO = "llama-3.3-70b-versatile"
+MODELO = "llama-3.1-8b-instant"
 
 # Inicializa o cliente Groq
 cliente = Groq(api_key=GROQ_API_KEY)
 
+# ==================================================
+# COMANDOS DO BOT
+# ==================================================
+
 async def start(update, context):
     await update.message.reply_text(
-        "🤖 Bot com IA avançada!\n\n"
-        "📝 Envie texto para análise\n"
-        "📸 Envie imagens para análise\n"
-        "🎥 Envie vídeos para análise\n\n"
-        "Comandos:\n"
-        "/blur - desfocar imagem\n"
-        "/resize - redimensionar\n"
-        "/rotate - girar imagem"
+        "🤖 *Bot funcionando!*\n\n"
+        f"✅ Modelo: `{MODELO}`\n"
+        "⚡ IA gratuita via Groq\n"
+        "🟢 Rodando 24/7\n\n"
+        "Me envie qualquer mensagem!",
+        parse_mode="Markdown"
     )
 
-async def responder_texto(update, context):
+async def responder(update, context):
     msg = update.message.text
+    print(f"👤 Usuário: {msg}")
+    
     await update.message.chat.send_action(action="typing")
+    
     try:
         resposta = cliente.chat.completions.create(
             model=MODELO,
-            messages=[{"role": "user", "content": msg}]
+            messages=[
+                {"role": "system", "content": "Você é um assistente amigável que responde em português."},
+                {"role": "user", "content": msg}
+            ],
+            temperature=0.7,
+            max_tokens=1024
         )
-        await update.message.reply_text(resposta.choices[0].message.content)
+        
+        texto = resposta.choices[0].message.content
+        await update.message.reply_text(texto)
+        print(f"🤖 Resposta enviada")
+        
     except Exception as e:
-        await update.message.reply_text(f"Erro: {e}")
+        print(f"❌ Erro: {e}")
+        await update.message.reply_text(f"❌ Erro: {str(e)}")
 
-async def responder_imagem(update, context):
-    await update.message.chat.send_action(action="typing")
-    try:
-        file = await update.message.photo[-1].get_file()
-        img_bytes = await file.download_as_bytearray()
-        
-        # Aqui você precisaria de um modelo com visão (Groq não suporta imagem)
-        await update.message.reply_text(
-            "📸 Imagem recebida!\n\n"
-            "Infelizmente o Groq ainda não suporta análise de imagens.\n"
-            "Para editar a imagem, use: /blur, /resize ou /rotate"
-        )
-    except Exception as e:
-        await update.message.reply_text(f"Erro ao processar imagem: {e}")
-
-async def responder_video(update, context):
-    await update.message.chat.send_action(action="typing")
-    try:
-        file = await update.message.video.get_file()
-        await update.message.reply_text(
-            "🎥 Vídeo recebido!\n\n"
-            "Infelizmente o Groq ainda não suporta análise de vídeos."
-        )
-    except Exception as e:
-        await update.message.reply_text(f"Erro ao processar vídeo: {e}")
-
-async def blur_imagem(update, context):
-    try:
-        if not update.message.reply_to_message or not update.message.reply_to_message.photo:
-            await update.message.reply_text("Responda a uma imagem com /blur")
-            return
-        
-        file = await update.message.reply_to_message.photo[-1].get_file()
-        img_bytes = await file.download_as_bytearray()
-        img = Image.open(io.BytesIO(img_bytes))
-        
-        img_blur = img.filter(ImageFilter.GaussianBlur(radius=10))
-        
-        output = io.BytesIO()
-        img_blur.save(output, format="PNG")
-        output.seek(0)
-        
-        await update.message.reply_photo(photo=output)
-    except Exception as e:
-        await update.message.reply_text(f"Erro: {e}")
-
-async def resize_imagem(update, context):
-    try:
-        if not context.args:
-            await update.message.reply_text("Use: /resize 400 300")
-            return
-        
-        if not update.message.reply_to_message or not update.message.reply_to_message.photo:
-            await update.message.reply_text("Responda a uma imagem com /resize")
-            return
-        
-        width, height = int(context.args[0]), int(context.args[1])
-        
-        file = await update.message.reply_to_message.photo[-1].get_file()
-        img_bytes = await file.download_as_bytearray()
-        img = Image.open(io.BytesIO(img_bytes))
-        
-        img_resized = img.resize((width, height))
-        
-        output = io.BytesIO()
-        img_resized.save(output, format="PNG")
-        output.seek(0)
-        
-        await update.message.reply_photo(photo=output)
-    except Exception as e:
-        await update.message.reply_text(f"Erro: {e}")
-
-async def rotate_imagem(update, context):
-    try:
-        if not context.args:
-            await update.message.reply_text("Use: /rotate 90")
-            return
-        
-        if not update.message.reply_to_message or not update.message.reply_to_message.photo:
-            await update.message.reply_text("Responda a uma imagem com /rotate")
-            return
-        
-        angle = int(context.args[0])
-        
-        file = await update.message.reply_to_message.photo[-1].get_file()
-        img_bytes = await file.download_as_bytearray()
-        img = Image.open(io.BytesIO(img_bytes))
-        
-        img_rotated = img.rotate(angle, expand=True)
-        
-        output = io.BytesIO()
-        img_rotated.save(output, format="PNG")
-        output.seek(0)
-        
-        await update.message.reply_photo(photo=output)
-    except Exception as e:
-        await update.message.reply_text(f"Erro: {e}")
+# ==================================================
+# INICIALIZAÇÃO
+# ==================================================
 
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("blur", blur_imagem))
-    app.add_handler(CommandHandler("resize", resize_imagem))
-    app.add_handler(CommandHandler("rotate", rotate_imagem))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
     
-    app.add_handler(MessageHandler(filters.PHOTO, responder_imagem))
-    app.add_handler(MessageHandler(filters.VIDEO, responder_video))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder_texto))
+    print("=" * 50)
+    print("✅ BOT INICIADO COM SUCESSO!")
+    print(f"🤖 Modelo: {MODELO}")
+    print("📱 Bot rodando 24/7!")
+    print("=" * 50)
     
-    print("✅ Bot iniciado com sucesso!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
